@@ -1,0 +1,11 @@
+version: "3.8"
+
+volumes:
+  pg_master_data:
+    name: pg_master_data
+  pg_slave1_data:
+    name: pg_slave1_data
+  su_redis_data:
+    name: su_redis_data
+  su_redis_conf:
+    name: su_redis_conf
