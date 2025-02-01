@@ -1,133 +1,68 @@
-version: '3.8'
+version: "3.8"
 
-services:  
+services:
   prometheus: # default port 9090
     image: prom/prometheus:v2.18.1
-    container_name: su-prometheus
-    ports:
-      - "9090:9090"
+    container_name: do-prometheus
+    network_mode: host
     restart: unless-stopped
     volumes:
       - ./conf/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./conf/prometheus/cpu_recording_rules.yml:/etc/prometheus/cpu_recording_rules.yml
-#      - ./conf/prometheus/rules.yml:/etc/prometheus/rules.yml
-#      - ./conf/prometheus/mem_rules.yml:/etc/prometheus/mem_rules.yml
-#      - ./conf/prometheus/cpu_rules.yml:/etc/prometheus/cpu_rules.yml
-#      - ./conf/prometheus/mem_recording_rules.yml:/etc/prometheus/mem_recording_rules.yml
-      - './data/prometheus:/data/prometheus'
+      - ./conf/prometheus/mem_rules.yml:/etc/prometheus/mem_rules.yml
+      - ./conf/prometheus/cpu_rules.yml:/etc/prometheus/cpu_rules.yml
+      - ./conf/prometheus/mem_recording_rules.yml:/etc/prometheus/mem_recording_rules.yml
     user: root
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/data/prometheus'
-#    depends_on:
-#    - cadvisor
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/data/prometheus"
 
   node-exporter: # Sharing Host network, default port 9100
     image: prom/node-exporter:v1.8.1
-    container_name: su-node-exporter
+    container_name: do-node-exporter
     command:
-      - '--path.rootfs=/host'
-#    network_mode: host
-    ports:
-      - "9100:9100"
+      - "--path.rootfs=/host"
+    network_mode: host
     pid: host
     restart: unless-stopped
     volumes:
-      - '/:/host:ro,rslave'
-#
-#  cadvisor: # google/cadvisor is deprecated, use gcr.io/cadvisor/cadvisor
-#    image: gcr.io/cadvisor/cadvisor:v0.49.1
-#    container_name: su-cadvisor
-#    restart: unless-stopped
-#    ports:
-#    - 9200:8080
-#    volumes:
-#    - /:/rootfs:ro
-#    - /var/run:/var/run:rw
-#    - /sys:/sys:ro
-#    - /var/lib/docker/:/var/lib/docker:ro
-#    depends_on:
-#    - redis
-#
-#  alertmanager:
-#    image: prom/alertmanager:v0.27.0
-#    container_name: su-alertmanager
-#    restart: unless-stopped
-#    ports:
-#    - 9300:9093
-#    volumes:
-#    - ./conf/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-#    - ./data/alertmanager:/data
-#    command:
-#      - '--config.file=/etc/alertmanager/alertmanager.yml'
-#      - '--storage.path=/data'
-
-#  promtail:
-#    image: grafana/promtail:3.0.0
-#    container_name: su-promtail
-#    restart: unless-stopped
-#    ports:
-#      - 9400:9080
-#    volumes:
-#      - ./conf/promtail/promtail.yml:/etc/promtail/promtail.yml
-#      - ./data/promtail:/data
-#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-#    command:
-#      - '-config.file=/etc/promtail/promtail.yml'
-#    user: root
-    
-#  loki:
-#    image: grafana/loki:2.9.2
-#    container_name: su-loki
-#    restart: unless-stopped
-#    ports:
-#    - 3100:3100
-#    volumes:
-#    - ./conf/loki/local-config.yaml:/etc/loki/local-config.yaml
-#    - ./data/loki:/data
-#    command:
-#      - '-config.file=/etc/loki/local-config.yaml'
-#    depends_on:
-#      - promtail
-
-#  webhook-agent:
-#    image: sylvius/webhook-agent:1.0
-#    container_name: su-webhook-agent
-#    restart: unless-stopped
-#    environment:
-#      - WEBHOOK_TYPE=${WEBHOOK_TYPE}
-#      - TELEGRAM_API_TOKEN=${TELEGRAM_API_TOKEN}
-#      - TELEGRAM_CHANNEL_NAME=${TELEGRAM_CHANNEL_NAME}
-#      - JANDI_TOPIC_PATH=${JANDI_TOPIC_PATH}
-#    ports:
-#      - 9800:9800
-
+      - "/:/host:ro,rslave"
+  # cadvisor: # google/cadvisor is deprecated, use gcr.io/cadvisor/cadvisor
+  #   image: gcr.io/cadvisor/cadvisor:v0.49.1
+  #   container_name: do-cadvisor
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   volumes:
+  #   - /:/rootfs:ro
+  #   - /var/run:/var/run:rw
+  #   - /sys:/sys:ro
+  #   - /var/lib/docker/:/var/lib/docker:ro
+  #   depends_on:
+  #   - redis
   grafana:
     image: grafana/grafana-oss:11.1.0
-    container_name: su-grafana
+    container_name: do-grafana
     restart: unless-stopped
-    ports:
-    - 9900:3000
+    network_mode: host # 추가
     volumes:
-    - ./conf/grafana/grafana.ini:/etc/grafana/grafana.ini
-    - ./conf/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
-    - ./conf/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
-    - ./conf/grafana/dashboard.json:/var/lib/grafana/dashboards/dashboard.json
-    - ./data/grafana:/var/lib/grafana
+      - ./conf/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./conf/grafana/dashboard.yaml:/etc/grafana/provisioning/dashboards/dashboard.yaml
+      - ./conf/grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./conf/grafana/dashboard.json:/var/lib/grafana/dashboards/dashboard.json
+      - ./data/grafana:/var/lib/grafana
     user: root
 
-#  redis:
-#    image: redis:latest
-#    container_name: su-redis
-#    command: redis-server /usr/local/etc/redis/redis.conf
-#    restart: unless-stopped
-#    ports:
-#    - 6390:6379
-#    volumes:
-#    - ./conf/redis/redis.conf:/usr/local/etc/redis/redis.conf
-#    - ./data/redis:/data
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: "1"
-#          memory: 1024M
+  # redis:
+  #   image: redis:latest
+  #   container_name: do-redis
+  #   command: redis-server /usr/local/etc/redis/redis.conf
+  #   restart: unless-stopped
+  #   ports:
+  #   - 6390:6379
+  #   volumes:
+  #   - ./conf/redis/redis.conf:/usr/local/etc/redis/redis.conf
+  #   - ./data/redis:/data
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 256M
